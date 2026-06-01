@@ -1,13 +1,12 @@
 import { useRef, useState } from 'react'
 import { Upload, Download, Trash2, File, Sparkles, Globe, Link2 } from 'lucide-react'
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { useAuth } from '../hooks/useAuth'
 import { useCollection } from '../hooks/useCollection'
 import { useFirestore } from '../hooks/useFirestore'
 import { useAiStatus } from '../hooks/useAiStatus'
-import { storage } from '../firebase/config'
+import { supabase } from '../supabase/config'
 import { summarizeFile, summarizeUrl } from '../lib/ai'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
@@ -18,8 +17,8 @@ import SummaryModal from '../components/ai/SummaryModal'
 export default function Files() {
   const { user } = useAuth()
   const { configured } = useAiStatus()
-  const { docs: files, loading } = useCollection(user?.uid, 'files')
-  const { add, remove } = useFirestore(user?.uid)
+  const { docs: files, loading } = useCollection(user?.id, 'files')
+  const { add, remove } = useFirestore(user?.id)
   const [uploading, setUploading] = useState(false)
   const [summarizingId, setSummarizingId] = useState(null)
   const [url, setUrl] = useState('')
@@ -38,19 +37,24 @@ export default function Files() {
     setSummaryOpen(true)
   }
 
+  const uploadToSupabase = async (file, path) => {
+    const { error } = await supabase.storage.from('uploads').upload(path, file)
+    if (error) throw error
+    const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(path)
+    return publicUrl
+  }
+
   const handleUpload = async (e) => {
     const file = e.target.files?.[0]
-    if (!file || !storage) {
-      toast.error('Storage is not configured')
+    if (!file || !supabase) {
+      toast.error('Supabase is not configured')
       return
     }
 
     setUploading(true)
     try {
-      const path = `users/${user.uid}/files/${Date.now()}_${file.name}`
-      const storageRef = ref(storage, path)
-      await uploadBytes(storageRef, file)
-      const downloadUrl = await getDownloadURL(storageRef)
+      const path = `${user.id}/files/${Date.now()}_${file.name}`
+      const downloadUrl = await uploadToSupabase(file, path)
 
       await add(
         'files',
@@ -75,7 +79,7 @@ export default function Files() {
     const file = e.target.files?.[0]
     if (!file) return
     if (!configured) {
-      toast.error('AI not configured — add GEMINI_API_KEY to .env')
+      toast.error('AI not configured')
       return
     }
 
@@ -86,11 +90,10 @@ export default function Files() {
       showSummary(`Summary: ${file.name}`, summary, file.name)
       toast.success('Summary ready', { id: 'sum' })
 
-      if (storage && user) {
-        const path = `users/${user.uid}/files/${Date.now()}_${file.name}`
-        const storageRef = ref(storage, path)
-        await uploadBytes(storageRef, file)
-        const downloadUrl = await getDownloadURL(storageRef)
+      if (supabase && user) {
+        const path = `${user.id}/files/${Date.now()}_${file.name}`
+        const downloadUrl = await uploadToSupabase(file, path)
+        
         await add(
           'files',
           { name: file.name, url: downloadUrl, path, size: file.size, type: file.type },
@@ -120,8 +123,8 @@ export default function Files() {
       toast.loading('Fetching & analyzing…', { id: 'sum' })
       const res = await fetch(f.url)
       const blob = await res.blob()
-      const file = new File([blob], f.name, { type: f.type || blob.type })
-      const summary = await summarizeFile(file)
+      const fileObj = new File([blob], f.name, { type: f.type || blob.type })
+      const summary = await summarizeFile(fileObj)
       showSummary(`Summary: ${f.name}`, summary, f.name)
       toast.success('Summary ready', { id: 'sum' })
     } catch (err) {
@@ -156,7 +159,7 @@ export default function Files() {
   const handleDelete = async (f) => {
     if (!confirm(`Delete ${f.name}?`)) return
     try {
-      if (f.path) await deleteObject(ref(storage, f.path))
+      if (f.path) await supabase.storage.from('uploads').remove([f.path])
       await remove('files', f.id, `Deleted file: ${f.name}`)
       toast.success('Deleted')
     } catch (err) {
@@ -238,7 +241,7 @@ export default function Files() {
                 <p className="truncate font-medium text-white">{f.name}</p>
                 <p className="text-xs text-zinc-500">
                   {formatSize(f.size || 0)}
-                  {f.createdAt?.toDate && ` · ${format(f.createdAt.toDate(), 'MMM d, yyyy')}`}
+                  {f.createdAt && ` · ${format(new Date(f.createdAt), 'MMM d, yyyy')}`}
                 </p>
               </div>
               <Button

@@ -1,8 +1,9 @@
 import { SUMMARY_PROMPT } from './aiPrompts'
 
-const CHAT_API = '/api/chat'
-const FETCH_API = '/api/fetch-url'
-const STATUS_API = '/api/chat/status'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080'
+const CHAT_API = `${BACKEND_URL}/api/chat`
+const FETCH_API = `${BACKEND_URL}/api/fetchUrl`
+const STATUS_API = `${BACKEND_URL}/api/chat/status`
 
 const SYSTEM_PROMPT = `You are AP Track AI — a capable, friendly assistant like ChatGPT.
 Answer directly and completely. User tracks spending in Indian Rupees (₹).

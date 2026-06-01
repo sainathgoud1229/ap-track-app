@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { User, Bell, Shield } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { updateProfile } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
+import { supabase } from '../supabase/config'
 import { useAuth } from '../hooks/useAuth'
 import { useTheme } from '../hooks/useTheme'
 import { useDocument } from '../hooks/useDocument'
-import { db } from '../firebase/config'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
@@ -21,9 +19,11 @@ function ProfileForm({ user, profile }) {
     try {
       if (!user) return
       const name = displayName.trim()
-      await updateProfile(user, { displayName: name })
-      if (db) {
-        await setDoc(doc(db, 'users', user.uid), { displayName: name }, { merge: true })
+      const { error } = await supabase.auth.updateUser({ data: { full_name: name } })
+      if (error) throw error
+      
+      if (supabase) {
+        await supabase.from('users').update({ displayName: name }).eq('id', user.id)
       }
       toast.success('Profile updated')
     } catch (err) {
@@ -42,7 +42,7 @@ function ProfileForm({ user, profile }) {
 
 export default function Settings() {
   const { user } = useAuth()
-  const { data: profile, loading } = useDocument(user?.uid ? ['users', user.uid] : null)
+  const { data: profile, loading } = useDocument(user?.id ? ['users', user.id] : null)
   const { dark, toggleTheme } = useTheme()
   const [notifications, setNotifications] = useState(true)
 
@@ -54,7 +54,7 @@ export default function Settings() {
           <h2 className="font-semibold text-white">Profile</h2>
         </div>
         {!loading && user && (
-          <ProfileForm key={`${user.uid}-${profile?.displayName ?? ''}`} user={user} profile={profile} />
+          <ProfileForm key={`${user.id}-${profile?.displayName ?? ''}`} user={user} profile={profile} />
         )}
       </Card>
 
@@ -92,7 +92,7 @@ export default function Settings() {
           <h2 className="font-semibold text-white">Security</h2>
         </div>
         <p className="text-sm text-zinc-400">
-          Password reset is available from the login page. Data is secured with Firebase Auth and per-user Firestore rules.
+          Password reset is available from the login page. Data is secured with Supabase Auth and per-user RLS policies.
         </p>
       </Card>
     </div>

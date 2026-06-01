@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { Plus, Trophy, Trash2, Pencil, Upload } from 'lucide-react'
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 import { useAuth } from '../hooks/useAuth'
 import { useCollection } from '../hooks/useCollection'
 import { useFirestore } from '../hooks/useFirestore'
-import { storage } from '../firebase/config'
+import { supabase } from '../supabase/config'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
 import Input from '../components/ui/Input'
@@ -15,8 +14,8 @@ import { CardSkeleton } from '../components/ui/Skeleton'
 
 export default function Achievements() {
   const { user } = useAuth()
-  const { docs: items, loading } = useCollection(user?.uid, 'achievements')
-  const { add, update, remove } = useFirestore(user?.uid)
+  const { docs: items, loading } = useCollection(user?.id, 'achievements')
+  const { add, update, remove } = useFirestore(user?.id)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({ title: '', description: '', date: new Date().toISOString().slice(0, 10) })
@@ -24,10 +23,11 @@ export default function Achievements() {
   const [uploading, setUploading] = useState(false)
 
   const uploadFile = async (f) => {
-    const path = `users/${user.uid}/achievements/${Date.now()}_${f.name}`
-    const storageRef = ref(storage, path)
-    await uploadBytes(storageRef, f)
-    return getDownloadURL(storageRef)
+    const path = `${user.id}/achievements/${Date.now()}_${f.name}`
+    const { error } = await supabase.storage.from('uploads').upload(path, f)
+    if (error) throw error
+    const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(path)
+    return { url: publicUrl, path }
   }
 
   const handleSave = async (e) => {
@@ -35,9 +35,15 @@ export default function Achievements() {
     setUploading(true)
     try {
       let imageUrl = editing?.imageUrl
-      if (file) imageUrl = await uploadFile(file)
+      let imagePath = editing?.imagePath
+      
+      if (file) {
+        const result = await uploadFile(file)
+        imageUrl = result.url
+        imagePath = result.path
+      }
 
-      const data = { ...form, imageUrl: imageUrl || null }
+      const data = { ...form, imageUrl: imageUrl || null, imagePath: imagePath || null }
       if (editing) {
         await update('achievements', editing.id, data, `Updated achievement: ${form.title}`)
       } else {
@@ -55,10 +61,9 @@ export default function Achievements() {
 
   const handleDelete = async (item) => {
     if (!confirm('Delete this achievement?')) return
-    if (item.imageUrl && storage) {
+    if (item.imagePath && supabase) {
       try {
-        const path = decodeURIComponent(new URL(item.imageUrl).pathname.split('/o/')[1]?.split('?')[0] || '')
-        if (path) await deleteObject(ref(storage, path))
+        await supabase.storage.from('uploads').remove([item.imagePath])
       } catch { /* ignore */ }
     }
     await remove('achievements', item.id, 'Deleted achievement')

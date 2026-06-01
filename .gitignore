@@ -17,6 +17,9 @@ dist-ssr
 .env.local
 .env.*.local
 
+# Local git hook bypass folder
+.githooks-empty
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

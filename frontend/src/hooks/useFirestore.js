@@ -1,45 +1,41 @@
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  serverTimestamp,
-  updateDoc,
-} from 'firebase/firestore'
-import { db } from '../firebase/config'
+import { supabase } from '../supabase/config'
 import { logActivity } from '../lib/activity'
 import { buildMetricEntry } from '../lib/metrics'
 
 function assertDb(userId) {
-  if (!db || !userId) {
-    throw new Error('Database is not available. Sign in and check Firebase configuration.')
+  if (!supabase || !userId) {
+    throw new Error('Database is not available. Sign in and check Supabase configuration.')
   }
 }
 
 export function useFirestore(userId) {
   const add = async (collectionName, data, activityMsg) => {
     assertDb(userId)
-    const ref = await addDoc(collection(db, 'users', userId, collectionName), {
+    const { data: inserted, error } = await supabase.from(collectionName).insert({
+      user_id: userId,
       ...data,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    })
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }).select().single()
+    if (error) throw error
     if (activityMsg) await logActivity(userId, collectionName, activityMsg)
-    return ref.id
+    return inserted.id
   }
 
   const update = async (collectionName, id, data, activityMsg) => {
     assertDb(userId)
-    await updateDoc(doc(db, 'users', userId, collectionName, id), {
+    const { error } = await supabase.from(collectionName).update({
       ...data,
-      updatedAt: serverTimestamp(),
-    })
+      updatedAt: new Date().toISOString()
+    }).eq('id', id).eq('user_id', userId)
+    if (error) throw error
     if (activityMsg) await logActivity(userId, collectionName, activityMsg)
   }
 
   const remove = async (collectionName, id, activityMsg) => {
     assertDb(userId)
-    await deleteDoc(doc(db, 'users', userId, collectionName, id))
+    const { error } = await supabase.from(collectionName).delete().eq('id', id).eq('user_id', userId)
+    if (error) throw error
     if (activityMsg) await logActivity(userId, collectionName, activityMsg)
   }
 
