@@ -19,9 +19,9 @@ import { getAllSkillTrends, getSkillChartSeries } from '../lib/metrics'
 
 export default function Skills() {
   const { user } = useAuth()
-  const { docs: skills, loading } = useCollection(user?.uid, 'skills')
-  const { docs: metrics } = useCollection(user?.uid, 'metrics', 'recordedAt')
-  const { add, update, remove, logMetric } = useFirestore(user?.uid)
+  const { docs: skills, loading } = useCollection(user?.id, 'skills')
+  const { docs: metrics } = useCollection(user?.id, 'metrics', 'recordedAt')
+  const { add, update, remove, logMetric } = useFirestore(user?.id)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({ name: '', level: 50, category: '' })

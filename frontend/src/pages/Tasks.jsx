@@ -71,8 +71,8 @@ function SortableTask({ task, onEdit, onDelete, onStatusChange }) {
 
 export default function Tasks() {
   const { user } = useAuth()
-  const { docs: tasks, loading } = useCollection(user?.uid, 'tasks')
-  const { add, update, remove, logMetric } = useFirestore(user?.uid)
+  const { docs: tasks, loading } = useCollection(user?.id, 'tasks')
+  const { add, update, remove, logMetric } = useFirestore(user?.id)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({ title: '', status: 'todo', tag: '', dueDate: '' })

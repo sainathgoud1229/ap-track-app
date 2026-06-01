@@ -28,9 +28,9 @@ export default function Calendar() {
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState({ title: '', date: '', time: '', type: 'reminder' })
 
-  const { docs: reminders } = useCollection(user?.uid, 'reminders')
-  const { docs: tasks } = useCollection(user?.uid, 'tasks')
-  const { add, remove } = useFirestore(user?.uid)
+  const { docs: reminders } = useCollection(user?.id, 'reminders')
+  const { docs: tasks } = useCollection(user?.id, 'tasks')
+  const { add, remove } = useFirestore(user?.id)
 
   const monthStart = startOfMonth(current)
   const monthEnd = endOfMonth(current)

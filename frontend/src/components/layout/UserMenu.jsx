@@ -8,7 +8,7 @@ import { getDisplayName, getInitials, cn } from '../../lib/utils'
 
 export default function UserMenu() {
   const { user, logout } = useAuth()
-  const { data: profile } = useDocument(user?.uid ? ['users', user.uid] : null)
+  const { data: profile } = useDocument(user?.id ? ['users', user.id] : null)
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 

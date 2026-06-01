@@ -13,7 +13,7 @@ import {
 
 export function useDashboard() {
   const { user } = useAuth()
-  const uid = user?.uid
+  const uid = user?.id
 
   const tasksState = useCollection(uid, 'tasks')
   const goalsState = useCollection(uid, 'goals')

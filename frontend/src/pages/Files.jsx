@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Upload, Download, Trash2, File, Sparkles, Globe, Link2 } from 'lucide-react'
+import { Upload, Download, Trash2, File as FileIcon, Sparkles, Globe, Link2 } from 'lucide-react'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { useAuth } from '../hooks/useAuth'
@@ -37,24 +37,20 @@ export default function Files() {
     setSummaryOpen(true)
   }
 
-  const uploadToSupabase = async (file, path) => {
-    const { error } = await supabase.storage.from('uploads').upload(path, file)
-    if (error) throw error
-    const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(path)
-    return publicUrl
-  }
-
   const handleUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file || !supabase) {
-      toast.error('Supabase is not configured')
+      toast.error('Storage is not configured')
       return
     }
 
     setUploading(true)
     try {
-      const path = `${user.id}/files/${Date.now()}_${file.name}`
-      const downloadUrl = await uploadToSupabase(file, path)
+      const path = `users/${user.id}/files/${Date.now()}_${file.name}`
+      const { error: uploadError } = await supabase.storage.from('uploads').upload(path, file)
+      if (uploadError) throw uploadError
+      const { data } = supabase.storage.from('uploads').getPublicUrl(path)
+      const downloadUrl = data.publicUrl
 
       await add(
         'files',
@@ -79,7 +75,7 @@ export default function Files() {
     const file = e.target.files?.[0]
     if (!file) return
     if (!configured) {
-      toast.error('AI not configured')
+      toast.error('AI not configured — add GEMINI_API_KEY to .env')
       return
     }
 
@@ -91,14 +87,17 @@ export default function Files() {
       toast.success('Summary ready', { id: 'sum' })
 
       if (supabase && user) {
-        const path = `${user.id}/files/${Date.now()}_${file.name}`
-        const downloadUrl = await uploadToSupabase(file, path)
-        
-        await add(
-          'files',
-          { name: file.name, url: downloadUrl, path, size: file.size, type: file.type },
-          `Uploaded: ${file.name}`
-        )
+        const path = `users/${user.id}/files/${Date.now()}_${file.name}`
+        const { error: uploadError } = await supabase.storage.from('uploads').upload(path, file)
+        if (!uploadError) {
+          const { data } = supabase.storage.from('uploads').getPublicUrl(path)
+          const downloadUrl = data.publicUrl
+          await add(
+            'files',
+            { name: file.name, url: downloadUrl, path, size: file.size, type: file.type },
+            `Uploaded: ${file.name}`
+          )
+        }
       }
     } catch (err) {
       toast.error(err.message, { id: 'sum' })
@@ -123,8 +122,8 @@ export default function Files() {
       toast.loading('Fetching & analyzing…', { id: 'sum' })
       const res = await fetch(f.url)
       const blob = await res.blob()
-      const fileObj = new File([blob], f.name, { type: f.type || blob.type })
-      const summary = await summarizeFile(fileObj)
+      const file = new File([blob], f.name, { type: f.type || blob.type })
+      const summary = await summarizeFile(file)
       showSummary(`Summary: ${f.name}`, summary, f.name)
       toast.success('Summary ready', { id: 'sum' })
     } catch (err) {
@@ -159,7 +158,9 @@ export default function Files() {
   const handleDelete = async (f) => {
     if (!confirm(`Delete ${f.name}?`)) return
     try {
-      if (f.path) await supabase.storage.from('uploads').remove([f.path])
+      if (f.path && supabase) {
+        await supabase.storage.from('uploads').remove([f.path])
+      }
       await remove('files', f.id, `Deleted file: ${f.name}`)
       toast.success('Deleted')
     } catch (err) {
@@ -226,7 +227,7 @@ export default function Files() {
         <p className="text-center text-zinc-500">Loading…</p>
       ) : files.length === 0 ? (
         <EmptyState
-          icon={File}
+          icon={FileIcon}
           title="No files yet"
           description="Upload documents or fetch a URL above for AI-powered summaries."
         />
@@ -235,13 +236,13 @@ export default function Files() {
           {files.map((f) => (
             <Card key={f.id} className="flex flex-wrap items-center gap-3">
               <div className="rounded-lg bg-indigo-500/10 p-3 text-indigo-400">
-                <File size={20} />
+                <FileIcon size={20} />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-white">{f.name}</p>
                 <p className="text-xs text-zinc-500">
                   {formatSize(f.size || 0)}
-                  {f.createdAt && ` · ${format(new Date(f.createdAt), 'MMM d, yyyy')}`}
+                  {f.createdAt?.toDate && ` · ${format(f.createdAt.toDate(), 'MMM d, yyyy')}`}
                 </p>
               </div>
               <Button

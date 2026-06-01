@@ -17,11 +17,11 @@ export default function GlobalSearch({ open, onClose }) {
   const { user } = useAuth()
   const [query, setQuery] = useState('')
   const navigate = useNavigate()
-  const { docs: tasks } = useCollection(user?.uid, 'tasks')
-  const { docs: notes } = useCollection(user?.uid, 'notes')
-  const { docs: goals } = useCollection(user?.uid, 'goals')
-  const { docs: skills } = useCollection(user?.uid, 'skills')
-  const { docs: expenses } = useCollection(user?.uid, 'expenses', 'date')
+  const { docs: tasks } = useCollection(user?.id, 'tasks')
+  const { docs: notes } = useCollection(user?.id, 'notes')
+  const { docs: goals } = useCollection(user?.id, 'goals')
+  const { docs: skills } = useCollection(user?.id, 'skills')
+  const { docs: expenses } = useCollection(user?.id, 'expenses', 'date')
 
   const results = useMemo(() => {
     const q = query.toLowerCase().trim()

@@ -12,8 +12,8 @@ import { cn } from '../lib/utils'
 
 export default function Notes() {
   const { user } = useAuth()
-  const { docs: notes } = useCollection(user?.uid, 'notes')
-  const { add, update, remove } = useFirestore(user?.uid)
+  const { docs: notes } = useCollection(user?.id, 'notes')
+  const { add, update, remove } = useFirestore(user?.id)
   const [selected, setSelected] = useState(null)
   const [search, setSearch] = useState('')
   const [title, setTitle] = useState('')

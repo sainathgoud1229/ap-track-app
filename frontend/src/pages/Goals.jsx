@@ -18,8 +18,8 @@ import { getGoalsChartData } from '../lib/metrics'
 
 export default function Goals() {
   const { user } = useAuth()
-  const { docs: goals, loading } = useCollection(user?.uid, 'goals')
-  const { add, update, remove, logMetric } = useFirestore(user?.uid)
+  const { docs: goals, loading } = useCollection(user?.id, 'goals')
+  const { add, update, remove, logMetric } = useFirestore(user?.id)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({ title: '', progress: 0, target: 100, unit: '%' })

@@ -19,8 +19,8 @@ import { getExpenseByCategory, getExpenseOverTime, getMonthlySpending, getTotalS
 
 export default function Finance() {
   const { user } = useAuth()
-  const { docs: expenses, loading } = useCollection(user?.uid, 'expenses', 'date')
-  const { add, update, remove, logMetric } = useFirestore(user?.uid)
+  const { docs: expenses, loading } = useCollection(user?.id, 'expenses', 'date')
+  const { add, update, remove, logMetric } = useFirestore(user?.id)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({

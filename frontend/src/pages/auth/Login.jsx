@@ -60,12 +60,9 @@ export default function Login() {
           <span className="text-2xl font-bold text-white">AP Track</span>
         </div>
 
-        <p className="mb-4 rounded-lg border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-xs text-indigo-200">
-          First time here? You must{' '}
-          <Link to="/signup" className="font-medium text-indigo-300 underline">
-            create an account
-          </Link>{' '}
-          before signing in. Login only works for accounts already registered in Firebase.
+        <p className="mt-2 text-center text-xs text-zinc-500">
+          Note: This is a demo app. You must <Link to="/signup" className="text-indigo-400 hover:underline">create an account</Link>{' '}
+          before signing in. Login only works for accounts already registered in Supabase.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

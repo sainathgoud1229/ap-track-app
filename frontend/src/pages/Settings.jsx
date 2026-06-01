@@ -19,11 +19,14 @@ function ProfileForm({ user, profile }) {
     try {
       if (!user) return
       const name = displayName.trim()
-      const { error } = await supabase.auth.updateUser({ data: { full_name: name } })
-      if (error) throw error
+      
+      const { error: updateAuthError } = await supabase.auth.updateUser({
+        data: { full_name: name }
+      })
+      if (updateAuthError) throw updateAuthError
       
       if (supabase) {
-        await supabase.from('users').update({ displayName: name }).eq('id', user.id)
+         await supabase.from('users').update({ displayName: name }).eq('id', user.id)
       }
       toast.success('Profile updated')
     } catch (err) {
@@ -92,7 +95,7 @@ export default function Settings() {
           <h2 className="font-semibold text-white">Security</h2>
         </div>
         <p className="text-sm text-zinc-400">
-          Password reset is available from the login page. Data is secured with Supabase Auth and per-user RLS policies.
+          Password reset is available from the login page. Data is secured with Supabase Auth and per-user RLS rules.
         </p>
       </Card>
     </div>

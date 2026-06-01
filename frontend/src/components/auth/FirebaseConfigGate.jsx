@@ -21,7 +21,7 @@ export default function FirebaseConfigGate({ children }) {
         </div>
         <h1 className="text-xl font-semibold text-white">Configuration required</h1>
         <p className="mt-2 text-sm text-zinc-400">
-          Add your Firebase credentials to <code className="text-indigo-300">.env</code> (see{' '}
+          Add your Supabase credentials to <code className="text-indigo-300">.env</code> (see{' '}
           <code className="text-indigo-300">.env.example</code>), then restart the dev server.
         </p>
         {firebaseInitError && (

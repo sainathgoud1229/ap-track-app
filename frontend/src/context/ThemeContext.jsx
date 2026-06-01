@@ -14,19 +14,17 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     if (!supabase || !user) return
+    
     let isMounted = true
-
     const fetchTheme = async () => {
       const { data } = await supabase.from('users').select('theme').eq('id', user.id).single()
-      if (data?.theme && isMounted) setDark(data.theme === 'dark')
+      if (isMounted && data?.theme) setDark(data.theme === 'dark')
     }
-
     fetchTheme()
 
     const channel = supabase.channel(`public:users:${user.id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${user.id}` }, (payload) => {
-        const theme = payload.new.theme
-        if (theme) setDark(theme === 'dark')
+        if (payload.new?.theme) setDark(payload.new.theme === 'dark')
       })
       .subscribe()
 

@@ -23,11 +23,11 @@ export default function Achievements() {
   const [uploading, setUploading] = useState(false)
 
   const uploadFile = async (f) => {
-    const path = `${user.id}/achievements/${Date.now()}_${f.name}`
+    const path = `users/${user.id}/achievements/${Date.now()}_${f.name}`
     const { error } = await supabase.storage.from('uploads').upload(path, f)
     if (error) throw error
-    const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(path)
-    return { url: publicUrl, path }
+    const { data } = supabase.storage.from('uploads').getPublicUrl(path)
+    return data.publicUrl
   }
 
   const handleSave = async (e) => {
@@ -35,15 +35,9 @@ export default function Achievements() {
     setUploading(true)
     try {
       let imageUrl = editing?.imageUrl
-      let imagePath = editing?.imagePath
-      
-      if (file) {
-        const result = await uploadFile(file)
-        imageUrl = result.url
-        imagePath = result.path
-      }
+      if (file) imageUrl = await uploadFile(file)
 
-      const data = { ...form, imageUrl: imageUrl || null, imagePath: imagePath || null }
+      const data = { ...form, imageUrl: imageUrl || null }
       if (editing) {
         await update('achievements', editing.id, data, `Updated achievement: ${form.title}`)
       } else {
@@ -61,9 +55,11 @@ export default function Achievements() {
 
   const handleDelete = async (item) => {
     if (!confirm('Delete this achievement?')) return
-    if (item.imagePath && supabase) {
+    if (item.imageUrl && supabase) {
       try {
-        await supabase.storage.from('uploads').remove([item.imagePath])
+        const urlObj = new URL(item.imageUrl)
+        const path = decodeURIComponent(urlObj.pathname.split('/uploads/')[1] || '')
+        if (path) await supabase.storage.from('uploads').remove([path])
       } catch { /* ignore */ }
     }
     await remove('achievements', item.id, 'Deleted achievement')

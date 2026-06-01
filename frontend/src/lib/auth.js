@@ -34,7 +34,7 @@ const AUTH_ERROR_MESSAGES = {
   'auth/too-many-requests': 'Too many attempts. Try again later.',
   'auth/popup-closed-by-user': 'Sign-in was cancelled.',
   'auth/network-request-failed': 'Network error. Check your connection.',
-  'auth/operation-not-allowed': 'This sign-in method is not enabled in Firebase.',
+  'auth/operation-not-allowed': 'This sign-in method is not enabled in Supabase.',
 }
 
 export function getAuthErrorMessage(error) {
@@ -45,9 +45,9 @@ export function getAuthErrorMessage(error) {
 
 export function requireFirebaseAuth(auth, isFirebaseConfigured) {
   if (!isFirebaseConfigured) {
-    throw new Error('Firebase is not configured. Add credentials to .env and restart.')
+    throw new Error('Supabase is not configured. Add credentials to .env and restart.')
   }
   if (!auth) {
-    throw new Error('Firebase Auth is unavailable. Check your project settings.')
+    throw new Error('Supabase Auth is unavailable. Check your project settings.')
   }
 }

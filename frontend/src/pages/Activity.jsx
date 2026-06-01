@@ -17,8 +17,8 @@ const typeIcons = {
 
 export default function Activity() {
   const { user } = useAuth()
-  const { docs: activities, loading } = useCollection(user?.uid, 'activities')
-  const { data: profile } = useDocument(user?.uid ? ['users', user.uid] : null)
+  const { docs: activities, loading } = useCollection(user?.id, 'activities')
+  const { data: profile } = useDocument(user?.id ? ['users', user.id] : null)
 
   const completedTasks = activities.filter((a) => a.message?.startsWith('Completed')).length
   const logins = activities.filter((a) => a.type === 'auth').length

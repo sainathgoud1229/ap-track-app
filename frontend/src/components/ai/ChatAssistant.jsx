@@ -67,7 +67,7 @@ function buildWelcome(configured) {
 export default function ChatAssistant() {
   const { user } = useAuth()
   const { configured, loading: aiLoading } = useAiStatus()
-  const { docs: notes } = useCollection(user?.uid, 'notes')
+  const { docs: notes } = useCollection(user?.id, 'notes')
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
