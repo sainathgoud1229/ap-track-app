@@ -97,11 +97,13 @@ export function AuthProvider({ children }) {
         options: { data: { full_name: displayName?.trim() } }
       })
       if (error) throw error
-      if (data.user) {
+      // If session is null, Supabase sent a confirmation email
+      const needsConfirmation = !data.session
+      if (data.user && !needsConfirmation) {
         await ensureUserProfile(data.user, displayName)
         await logActivity(data.user.id, 'auth', 'Account created')
       }
-      return data.user
+      return { user: data.user, needsConfirmation }
     } catch (e) {
       throw authError(e)
     }
@@ -125,9 +127,14 @@ export function AuthProvider({ children }) {
   const loginWithGoogle = async () => {
     requireFirebaseAuth()
     try {
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' })
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      })
       if (error) throw error
-      // Note: The redirection will happen, and user data will be synced in onAuthStateChange
+      // OAuth is a redirect flow — browser navigates to Google then back to this app
     } catch (e) {
       throw authError(e)
     }

@@ -6,8 +6,22 @@ import { callGemini, fetchWebPage, isKeyConfigured } from './aiShared.js';
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+// Allow the deployed Vercel frontend (set FRONTEND_URL in Render env vars)
+// Falls back to '*' for local development
+const allowedOrigin = process.env.FRONTEND_URL || '*';
+app.use(cors({
+  origin: allowedOrigin,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
 app.use(express.json());
+
+// Health check — keeps Render happy
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', service: 'ap-track-backend' });
+});
 
 app.get('/api/chat/status', (req, res) => {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
@@ -48,4 +62,5 @@ app.post('/api/fetchUrl', async (req, res) => {
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Backend server listening on port ${PORT}`);
+  console.log(`CORS allowed origin: ${allowedOrigin}`);
 });

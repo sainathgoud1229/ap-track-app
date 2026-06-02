@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Zap } from 'lucide-react'
+import { Zap, MailCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../../hooks/useAuth'
 import { validateDisplayName, validateEmail, validatePassword } from '../../lib/auth'
@@ -13,6 +13,7 @@ export default function Signup() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
   const { signup, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
 
@@ -28,9 +29,15 @@ export default function Signup() {
 
     setLoading(true)
     try {
-      await signup(email, password, name)
-      toast.success('Account created!')
-      navigate('/')
+      const { needsConfirmation } = await signup(email, password, name)
+      if (needsConfirmation) {
+        // Supabase sent a confirmation email — show message, don't navigate yet
+        setEmailSent(true)
+      } else {
+        // Email confirmation is disabled — session is active, go to dashboard
+        toast.success('Account created!')
+        navigate('/')
+      }
     } catch (err) {
       toast.error(err.message)
     } finally {
@@ -41,11 +48,43 @@ export default function Signup() {
   const handleGoogle = async () => {
     try {
       await loginWithGoogle()
-      toast.success('Signed in with Google')
-      navigate('/')
+      // Browser will redirect to Google — no navigate needed here.
+      // On return, onAuthStateChange fires and ProtectedRoute handles routing.
+      toast.success('Redirecting to Google…')
     } catch (err) {
       toast.error(err.message)
     }
+  }
+
+  // Show confirmation-sent screen
+  if (emailSent) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-mesh p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass glow-accent w-full max-w-md rounded-2xl p-8 text-center"
+        >
+          <div className="mb-4 flex justify-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-500/40">
+              <MailCheck className="text-white" size={28} />
+            </div>
+          </div>
+          <h1 className="text-xl font-bold text-white">Check your email</h1>
+          <p className="mt-3 text-sm text-zinc-400">
+            We sent a confirmation link to{' '}
+            <span className="font-medium text-indigo-300">{email}</span>.
+            <br />Click it to activate your account, then come back to sign in.
+          </p>
+          <Link
+            to="/login"
+            className="mt-6 inline-block rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 hover:bg-indigo-500 transition-colors"
+          >
+            Go to Sign In
+          </Link>
+        </motion.div>
+      </div>
+    )
   }
 
   return (

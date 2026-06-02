@@ -39,8 +39,9 @@ export default function Login() {
   const handleGoogle = async () => {
     try {
       await loginWithGoogle()
-      toast.success('Signed in with Google')
-      navigate('/')
+      // Browser will redirect to Google — no navigate needed here.
+      // On return, onAuthStateChange fires and ProtectedRoute handles routing.
+      toast.success('Redirecting to Google…')
     } catch (err) {
       toast.error(err.message)
     }
